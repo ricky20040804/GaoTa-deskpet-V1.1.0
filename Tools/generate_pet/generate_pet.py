@@ -397,7 +397,8 @@ def dashscope_image_edit(
             "每行少于8个角色，每行6个角色，每行7个角色，跨格角色，合并格子，"
             "漫画分镜，海报构图，大插画，角色出格，角色重叠，"
             "多余的腿，缺少腿，腿交叉错误，四肢方向错误，双前腿同时向前，"
-            "双后腿同时向后，人类跑步姿势"
+            "双后腿同时向后，人类跑步姿势，向左跑，面朝左，正面跑，背面跑，"
+            "跑步方向混乱"
         ),
     }
     if seed is not None:
@@ -451,7 +452,10 @@ Canvas:
 
 Rows:
 - Row 1 must contain exactly 8 idle character poses, calm breathing/blinking, one character per cell.
-- Row 2 must contain exactly 8 running character poses, side-view running toward the right, one character per cell.
+- Row 2 must contain exactly 8 running character poses, one character per cell.
+- Row 2 direction is mandatory: every running frame must be a side-view pose facing right and running toward the right.
+- In Row 2, the character's head, face, nose, chest, body direction, and motion direction must all point to the right in every one of the 8 cells.
+- Do not draw Row 2 facing left, facing forward, facing backward, diagonal, or mixed directions.
 - If the uploaded character is a four-legged animal, Row 2 running gait must be anatomically consistent. Use this exact 8-frame leg cycle:
   frame 1: left front leg reaches forward, left rear leg pushes backward, right front leg moves backward, right rear leg reaches forward.
   frame 2: left front leg vertical under shoulder, left rear leg lifting forward, right front leg lifting forward, right rear leg vertical under hip.
