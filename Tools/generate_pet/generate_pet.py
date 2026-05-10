@@ -12,7 +12,7 @@ The output is compatible with this app's current runtime:
 
 MVP behavior:
 - Generate one complete 4x8 spritesheet with an image API.
-- Row 0 is idle, row 1 is running, row 2 is failed, row 3 is waving.
+- Row 0 is idle, row 1 is running, row 2 is failed, row 3 is tail-wagging.
 - If --from-static is passed, skip the image API and make a static-but-runnable package.
 """
 
@@ -67,14 +67,14 @@ RUNTIME_ROWS: list[RuntimeRow] = [
     RuntimeRow("idle", 0, 8),
     RuntimeRow("running", 1, 8),
     RuntimeRow("failed", 2, 8),
-    RuntimeRow("waving", 3, 8),
+    RuntimeRow("tail-wagging", 3, 8),
 ]
 
 SOURCE_ACTIONS: list[RuntimeRow] = [
     RuntimeRow("idle", 0, 8),
     RuntimeRow("running", 1, 8),
     RuntimeRow("failed", 2, 8),
-    RuntimeRow("waving", 3, 8),
+    RuntimeRow("tail-wagging", 3, 8),
 ]
 
 
@@ -451,7 +451,8 @@ Rows:
 - Row 1 must contain exactly 8 idle cat poses, calm breathing/blinking, one cat per cell.
 - Row 2 must contain exactly 8 running cat poses, side-view running toward the right, one cat per cell.
 - Row 3 must contain exactly 8 failed cat poses, disappointed or confused but still cute, one cat per cell.
-- Row 4 must contain exactly 8 waving cat poses, cheerful waving toward the viewer, one cat per cell.
+- Row 4 must contain exactly 8 tail-wagging cat poses, the cat happily wagging its tail, one cat per cell.
+- In Row 4, the tail movement must be the main visible change from frame to frame. Do not make the cat wave a paw.
 
 Style: {style}.
 Character notes: {description}.
@@ -512,6 +513,8 @@ def generate_action_frames(args: argparse.Namespace, action: RuntimeRow) -> list
         strip_path = strip_dir / f"{action.name}-strip.png"
         if action.name == "running" and not strip_path.exists():
             strip_path = strip_dir / "running-right-strip.png"
+        if action.name == "tail-wagging" and not strip_path.exists():
+            strip_path = strip_dir / "waving-strip.png"
         if not strip_path.exists():
             raise SystemExit(f"Missing strip image: {strip_path}")
         return split_action_strip(Image.open(strip_path), action.frame_count, mode=args.split_mode)
@@ -583,7 +586,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--rebuild-from-strips",
         type=Path,
-        help="Reuse old idle/running-right/waving/failed strip PNGs from a generated pet directory and rebuild a 4x8 spritesheet.webp.",
+        help="Reuse old idle/running-right/tail-wagging-or-waving/failed strip PNGs from a generated pet directory and rebuild a 4x8 spritesheet.webp.",
     )
     parser.add_argument("--keep-intermediates", action="store_true", help="Save generated action strips.")
     parser.add_argument("--install", action="store_true", help="Copy pet.json and spritesheet.webp into ~/.codex/pets/<pet-id>.")

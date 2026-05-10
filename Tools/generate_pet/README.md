@@ -17,7 +17,7 @@ spritesheet.webp
 row 0 = idle
 row 1 = running
 row 2 = failed
-row 3 = waving
+row 3 = tail-wagging
 ```
 
 App 里：
@@ -25,7 +25,7 @@ App 里：
 ```text
 running-right = row 1 正常播放
 running-left = row 1 水平翻转播放
-jumping = waving
+jumping = tail-wagging
 waiting / running / review = idle
 ```
 
@@ -63,8 +63,8 @@ export DASHSCOPE_API_KEY="你的 DashScope API Key"
   Tools/generate_pet/generate_pet.py \
   --input character.png \
   --name 小白 \
-  --description "一只戴红围巾的白色小狗桌面宠物" \
-  --style "可爱的2D贴纸风格，透明背景，Q版，全身角色" \
+  --description "一只戴红围巾的白色小猫桌面宠物" \
+  --style "可爱的2D贴纸风格，绿幕背景，Q版，全身小猫，尾巴动作清楚" \
   --keep-intermediates
 ```
 
@@ -94,7 +94,7 @@ raw-spritesheet.png
 idle-strip.png
 running-right-strip.png
 failed-strip.png
-waving-strip.png
+tail-wagging-strip.png 或 waving-strip.png
 ```
 
 可以不重新调用 API，直接重建新的 `4 x 8` spritesheet：

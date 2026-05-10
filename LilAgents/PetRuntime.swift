@@ -76,6 +76,7 @@ enum PetAnimationState: String {
     case idle
     case runningRight = "running-right"
     case runningLeft = "running-left"
+    // The 4x8 runtime keeps the historical state name for app events, but row 3 is tail-wagging art.
     case waving
     case jumping
     case failed
