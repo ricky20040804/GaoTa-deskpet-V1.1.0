@@ -9,6 +9,7 @@ class CharacterContentView: NSView {
     weak var character: WalkerCharacter?
     private let spriteLayer = CALayer()
     private var spritesheet: CGImage?
+    private var actionSheets: [Int: CGImage] = [:]
     private var frameCache: [String: CGImage] = [:]
     private var dragStartScreenPoint: NSPoint?
     private var dragStartWindowOrigin: NSPoint?
@@ -44,19 +45,35 @@ class CharacterContentView: NSView {
     }
 
     func loadPet(_ package: PetPackage) {
-        guard let image = NSImage(contentsOf: package.spritesheetURL),
-              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            print("Spritesheet not found or unreadable: \(package.spritesheetURL.path)")
-            return
+        spritesheet = nil
+        actionSheets.removeAll()
+        frameCache.removeAll()
+
+        if !package.actionSheetURLs.isEmpty {
+            for (row, url) in package.actionSheetURLs {
+                guard let image = NSImage(contentsOf: url),
+                      let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                    print("Action sheet not found or unreadable: \(url.path)")
+                    continue
+                }
+                actionSheets[row] = cgImage
+            }
         }
 
-        spritesheet = cgImage
-        frameCache.removeAll()
+        if actionSheets.isEmpty {
+            guard let spritesheetURL = package.spritesheetURL,
+                  let image = NSImage(contentsOf: spritesheetURL),
+                  let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                print("Pet art not found or unreadable: \(package.displayName)")
+                return
+            }
+            spritesheet = cgImage
+        }
+
         showFrame(row: 0, column: 0)
     }
 
     func showFrame(row: Int, column: Int, flipped: Bool = false) {
-        guard let spritesheet else { return }
         let boundedRow = min(max(row, 0), PetAnimationPlayer.rows - 1)
         let boundedColumn = min(max(column, 0), PetAnimationPlayer.columns - 1)
         let cacheKey = "\(boundedRow):\(boundedColumn):\(flipped ? 1 : 0)"
@@ -65,13 +82,16 @@ class CharacterContentView: NSView {
         if let cached = frameCache[cacheKey] {
             frameImage = cached
         } else {
+            let source = actionSheets[boundedRow] ?? spritesheet
+            guard let source else { return }
+            let y = actionSheets[boundedRow] == nil ? CGFloat(boundedRow) * PetAnimationPlayer.frameHeight : 0
             let rect = CGRect(
                 x: CGFloat(boundedColumn) * PetAnimationPlayer.frameWidth,
-                y: CGFloat(boundedRow) * PetAnimationPlayer.frameHeight,
+                y: y,
                 width: PetAnimationPlayer.frameWidth,
                 height: PetAnimationPlayer.frameHeight
             )
-            if let cropped = spritesheet.cropping(to: rect), flipped {
+            if let cropped = source.cropping(to: rect), flipped {
                 let image = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
                 let flippedImage = NSImage(size: image.size)
                 flippedImage.lockFocus()
@@ -84,7 +104,7 @@ class CharacterContentView: NSView {
                 flippedImage.unlockFocus()
                 frameImage = flippedImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
             } else {
-                frameImage = spritesheet.cropping(to: rect)
+                frameImage = source.cropping(to: rect)
             }
             if let frameImage {
                 frameCache[cacheKey] = frameImage

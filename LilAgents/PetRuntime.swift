@@ -4,13 +4,29 @@ struct PetPackage {
     let id: String
     let displayName: String
     let description: String
-    let spritesheetURL: URL
+    let spritesheetURL: URL?
+    let actionSheetURLs: [Int: URL]
 
     private struct Manifest: Decodable {
         let id: String
         let displayName: String
         let description: String
-        let spritesheetPath: String
+        let spritesheetPath: String?
+        let actionSheetPaths: ActionSheetPaths?
+    }
+
+    private struct ActionSheetPaths: Decodable {
+        let idle: String
+        let running: String
+        let failed: String
+        let tailWagging: String
+
+        enum CodingKeys: String, CodingKey {
+            case idle
+            case running
+            case failed
+            case tailWagging = "tail-wagging"
+        }
     }
 
     static func discoverPets() -> [PetPackage] {
@@ -56,10 +72,11 @@ struct PetPackage {
             return nil
         }
 
-        let spritesheetURL = manifestURL
-            .deletingLastPathComponent()
-            .appendingPathComponent(manifest.spritesheetPath)
-        guard FileManager.default.fileExists(atPath: spritesheetURL.path) else {
+        let directory = manifestURL.deletingLastPathComponent()
+        let spritesheetURL = manifest.spritesheetPath.map { directory.appendingPathComponent($0) }
+        let actionSheetURLs = actionSheetURLs(from: manifest.actionSheetPaths, in: directory)
+
+        guard !actionSheetURLs.isEmpty || (spritesheetURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false) else {
             return nil
         }
 
@@ -67,8 +84,25 @@ struct PetPackage {
             id: manifest.id,
             displayName: manifest.displayName,
             description: manifest.description,
-            spritesheetURL: spritesheetURL
+            spritesheetURL: spritesheetURL,
+            actionSheetURLs: actionSheetURLs
         )
+    }
+
+    private static func actionSheetURLs(from paths: ActionSheetPaths?, in directory: URL) -> [Int: URL] {
+        guard let paths else { return [:] }
+
+        let candidates: [Int: URL] = [
+            0: directory.appendingPathComponent(paths.idle),
+            1: directory.appendingPathComponent(paths.running),
+            2: directory.appendingPathComponent(paths.failed),
+            3: directory.appendingPathComponent(paths.tailWagging)
+        ]
+
+        guard candidates.values.allSatisfy({ FileManager.default.fileExists(atPath: $0.path) }) else {
+            return [:]
+        }
+        return candidates
     }
 }
 

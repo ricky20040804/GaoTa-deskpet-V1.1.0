@@ -6,13 +6,17 @@ The output is compatible with this app's current runtime:
 
     <pet-id>/
       pet.json
-      spritesheet.webp    # 1536 x 768, 8 columns x 4 rows, 192 x 192 cells
+      idle.webp           # 1536 x 192, 8 frames
+      running.webp        # 1536 x 192, 8 frames
+      failed.webp         # 1536 x 192, 8 frames
+      tail-wagging.webp   # 1536 x 192, 8 frames
+      spritesheet.webp    # compatibility preview sheet, 1536 x 768
       preview.png
       <pet-id>.zip
 
 MVP behavior:
-- Generate one complete 4x8 spritesheet with an image API.
-- Row 0 is idle, row 1 is running, row 2 is failed, row 3 is tail-wagging.
+- Generate four separate 8-frame action strips with an image API.
+- The app plays idle, running, failed, and tail-wagging directly from those strips.
 - If --from-static is passed, skip the image API and make a static-but-runnable package.
 """
 
@@ -205,12 +209,30 @@ def build_preview(sheet: Image.Image) -> Image.Image:
     return preview.convert("RGB")
 
 
+def action_filename(action: RuntimeRow) -> str:
+    return f"{action.name}.webp"
+
+
+def write_action_sheets(output_dir: Path, action_frames: dict[str, list[Image.Image]]) -> None:
+    for action in SOURCE_ACTIONS:
+        strip = Image.new("RGBA", (SHEET_WIDTH, FRAME_HEIGHT), (0, 0, 0, 0))
+        for column, frame in enumerate(action_frames[action.name][: action.frame_count]):
+            strip.alpha_composite(frame, (column * FRAME_WIDTH, 0))
+        strip.save(output_dir / action_filename(action), "WEBP", lossless=True, quality=100, method=6)
+
+
 def write_manifest(output_dir: Path, pet_id: str, display_name: str, description: str) -> None:
     manifest = {
         "id": pet_id,
         "displayName": display_name,
         "description": description,
         "spritesheetPath": "spritesheet.webp",
+        "actionSheetPaths": {
+            "idle": "idle.webp",
+            "running": "running.webp",
+            "failed": "failed.webp",
+            "tail-wagging": "tail-wagging.webp",
+        },
     }
     (output_dir / "pet.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -221,6 +243,8 @@ def zip_package(output_dir: Path, pet_id: str) -> Path:
         archive.write(output_dir / "pet.json", arcname=f"{pet_id}/pet.json")
         archive.write(output_dir / "spritesheet.webp", arcname=f"{pet_id}/spritesheet.webp")
         archive.write(output_dir / "preview.png", arcname=f"{pet_id}/preview.png")
+        for action in SOURCE_ACTIONS:
+            archive.write(output_dir / action_filename(action), arcname=f"{pet_id}/{action_filename(action)}")
     return zip_path
 
 
@@ -230,6 +254,8 @@ def install_package(output_dir: Path, pet_id: str) -> Path:
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copy2(output_dir / "pet.json", destination / "pet.json")
         shutil.copy2(output_dir / "spritesheet.webp", destination / "spritesheet.webp")
+        for action in SOURCE_ACTIONS:
+            shutil.copy2(output_dir / action_filename(action), destination / action_filename(action))
     except PermissionError as exc:
         raise RuntimeError(
             f"Could not install to {destination}. The package was generated successfully; "
@@ -496,6 +522,71 @@ Strict requirements:
 """.strip()
 
 
+def action_prompt(action: RuntimeRow, display_name: str, style: str, description: str) -> str:
+    action_lines = {
+        "idle": """
+Action: idle.
+Create exactly 8 calm idle poses. The character should breathe, blink, or subtly shift weight.
+""",
+        "running": """
+Action: running.
+Create exactly 8 running poses. Direction is mandatory: every frame must be a side-view pose facing right and running toward the right.
+The character's head, face, nose, chest, body direction, and motion direction must all point to the right in all 8 cells.
+If the uploaded character is a four-legged animal, use this exact 8-frame leg cycle:
+frame 1: left front leg reaches forward, left rear leg pushes backward, right front leg moves backward, right rear leg reaches forward.
+frame 2: left front leg vertical under shoulder, left rear leg lifting forward, right front leg lifting forward, right rear leg vertical under hip.
+frame 3: left front leg moves backward, left rear leg reaches forward, right front leg reaches forward, right rear leg pushes backward.
+frame 4: left front leg lifting forward, left rear leg vertical under hip, right front leg vertical under shoulder, right rear leg lifting forward.
+frame 5: repeat frame 1 with a slightly different body bounce.
+frame 6: repeat frame 2 with a slightly different body bounce.
+frame 7: repeat frame 3 with a slightly different body bounce.
+frame 8: repeat frame 4 with a slightly different body bounce.
+For four-legged characters, diagonal leg pairs must alternate clearly. Do not draw the running row facing left, forward, backward, diagonal, or mixed directions.
+""",
+        "failed": """
+Action: failed.
+Create exactly 8 failed poses. The character should look disappointed, confused, dizzy, or mildly upset, but still cute.
+""",
+        "tail-wagging": """
+Action: tail-wagging.
+Create exactly 8 tail-wagging poses. The tail movement must be the main visible change from frame to frame.
+Do not make the character wave a paw or hand.
+""",
+    }[action.name]
+
+    return f"""
+Use the uploaded reference image as the character identity for a desktop pet named {display_name}.
+Create exactly one horizontal animation strip for this single action.
+
+Canvas:
+- The image is exactly 1 row x 8 columns, arranged horizontally.
+- This means exactly 8 separate character drawings total.
+- There are exactly these column slots: column 1, column 2, column 3, column 4, column 5, column 6, column 7, column 8.
+- There is no column 9. Do not draw a ninth character after column 8.
+- Imagine the canvas is divided into 8 equal invisible square cells. Place one and only one character inside each cell.
+- The character must stay completely inside its own invisible cell. Do not let any character cross into another cell.
+- Leave consistent empty green padding around each character inside its cell.
+- Do not draw visible grid lines, borders, text, labels, numbers, scenery, props, shadows, or UI.
+- Use a flat pure chroma-key green background (#00FF00) everywhere outside the character.
+
+{action_lines.strip()}
+
+Style: {style}.
+Character notes: {description}.
+
+Strict requirements:
+- Same character, same costume, same colors, same proportions in every frame.
+- Green screen background only, no gradients and no texture.
+- Full body visible in every frame.
+- Keep every character centered inside its own equal-sized cell with consistent size.
+- The strip must read left-to-right as a smooth looping animation.
+- Do not make fewer than 8 characters.
+- Do not make more than 8 characters.
+- Do not add an extra pose at the far right edge.
+- Do not crop off heads, ears, tails, paws, or body parts.
+""".strip()
+
+
 def generate_full_sheet(args: argparse.Namespace) -> Image.Image:
     env_name = "DASHSCOPE_API_KEY" if args.provider == "dashscope" else "OPENAI_API_KEY"
     api_key = os.environ.get(env_name)
@@ -541,7 +632,7 @@ def generate_action_frames(args: argparse.Namespace, action: RuntimeRow) -> list
             strip_path = strip_dir / "waving-strip.png"
         if not strip_path.exists():
             raise SystemExit(f"Missing strip image: {strip_path}")
-        return split_action_strip(Image.open(strip_path), action.frame_count, mode=args.split_mode)
+        return split_action_strip(remove_chroma_background(Image.open(strip_path)), action.frame_count, mode=args.split_mode)
 
     if args.from_static:
         return static_frames(args.input, action.frame_count)
@@ -577,7 +668,7 @@ def generate_action_frames(args: argparse.Namespace, action: RuntimeRow) -> list
     if args.keep_intermediates:
         args.output.mkdir(parents=True, exist_ok=True)
         strip.save(args.output / f"{action.name}-strip.{args.output_format}")
-    return split_action_strip(strip, action.frame_count, mode=args.split_mode)
+    return split_action_strip(remove_chroma_background(strip), action.frame_count, mode=args.split_mode)
 
 
 def parse_args() -> argparse.Namespace:
@@ -602,9 +693,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int)
     parser.add_argument(
         "--split-mode",
-        default="resize-strip",
+        default="crop-fit",
         choices=["resize-strip", "crop-fit"],
-        help="Only used with --rebuild-from-strips. Turns old action strips into 192x192 frames.",
+        help="Turns generated action strips into 192x192 frames. crop-fit is safest for model outputs with extra vertical padding.",
     )
     parser.add_argument("--from-static", action="store_true", help="Skip the image API and repeat the reference image into frames.")
     parser.add_argument(
@@ -632,14 +723,12 @@ def main() -> int:
     package_dir.mkdir(parents=True, exist_ok=True)
     args.output = package_dir
 
-    if args.from_static or args.rebuild_from_strips:
-        action_frames: dict[str, list[Image.Image]] = {}
-        for action in SOURCE_ACTIONS:
-            action_frames[action.name] = generate_action_frames(args, action)
-        sheet = build_sheet(action_frames)
-    else:
-        sheet = generate_full_sheet(args)
+    action_frames: dict[str, list[Image.Image]] = {}
+    for action in SOURCE_ACTIONS:
+        action_frames[action.name] = generate_action_frames(args, action)
 
+    write_action_sheets(package_dir, action_frames)
+    sheet = build_sheet(action_frames)
     sheet.save(package_dir / "spritesheet.webp", "WEBP", lossless=True, quality=100, method=6)
     build_preview(sheet).save(package_dir / "preview.png")
     write_manifest(package_dir, pet_id, args.name, args.description)

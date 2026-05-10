@@ -2,12 +2,16 @@
 
 本目录是桌面宠物生成流水线的本地原型。
 
-现在的运行器协议已经简化为：
+现在的运行器优先读取四张动作条：
 
 ```text
-spritesheet.webp
-尺寸：1536 x 768
-网格：8 列 x 4 行
+idle.webp
+running.webp
+failed.webp
+tail-wagging.webp
+
+每张图尺寸：1536 x 192
+每张图网格：8 列 x 1 行
 单格：192 x 192
 ```
 
@@ -34,6 +38,10 @@ waiting / running / review = idle
 ```text
 <pet-id>/
   pet.json
+  idle.webp
+  running.webp
+  failed.webp
+  tail-wagging.webp
   spritesheet.webp
   preview.png
   <pet-id>.zip
@@ -54,7 +62,7 @@ waiting / running / review = idle
 
 ## 调用通义万相生成
 
-脚本默认使用阿里云 DashScope 的 `wan2.6-image`，并要求模型一次生成完整 `4 x 8` spritesheet：
+脚本默认使用阿里云 DashScope 的 `wan2.6-image`，分别生成四张单行动作图，每张图严格 8 帧：
 
 ```bash
 export DASHSCOPE_API_KEY="你的 DashScope API Key"
@@ -68,10 +76,13 @@ export DASHSCOPE_API_KEY="你的 DashScope API Key"
   --keep-intermediates
 ```
 
-`--keep-intermediates` 会保存 API 返回的原图：
+`--keep-intermediates` 会保存 API 返回的原始动作条：
 
 ```text
-raw-spritesheet.png
+idle-strip.png
+running-strip.png
+failed-strip.png
+tail-wagging-strip.png
 ```
 
 如果你的 API Key 属于国际站或其他区域，可以改 endpoint：
