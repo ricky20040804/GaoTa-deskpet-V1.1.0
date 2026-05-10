@@ -64,7 +64,7 @@ export DASHSCOPE_API_KEY="你的 DashScope API Key"
   --input character.png \
   --name 小白 \
   --description "一只戴红围巾的可爱桌面宠物" \
-  --style "可爱的2D贴纸风格，绿幕背景，Q版，全身角色，尾巴动作清楚" \
+  --style "真实宠物照片风格，自然毛发质感，真实动物比例，柔和影棚光，全身宠物，绿幕背景，不要卡通，不要贴纸，不要Q版" \
   --keep-intermediates
 ```
 

@@ -477,6 +477,8 @@ Character notes: {description}.
 
 Strict requirements:
 - Same character, same costume, same colors, same proportions in every frame.
+- Prefer realistic pet proportions, natural fur texture, plausible anatomy, and lifelike lighting.
+- Avoid 2D cartoon style, sticker style, chibi proportions, anime proportions, mascot costume look, and toy-like plastic surfaces unless the uploaded reference clearly has that style.
 - Green screen background only, no gradients and no texture.
 - Full body visible in every frame.
 - Keep every character centered inside its own equal-sized cell with consistent size.
@@ -579,7 +581,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", type=Path, help="Reference character image path.")
     parser.add_argument("--name", required=True, help="Pet display name.")
     parser.add_argument("--description", default="A cute desktop companion.", help="Pet description.")
-    parser.add_argument("--style", default="cute sticker-like 2D character art", help="Visual style prompt.")
+    parser.add_argument(
+        "--style",
+        default=(
+            "realistic pet photo style, natural fur texture, lifelike animal anatomy, "
+            "soft studio lighting, clean edges, full-body pet, not cartoon, not sticker, not chibi"
+        ),
+        help="Visual style prompt.",
+    )
     parser.add_argument("--id", dest="pet_id", help="Pet id. Defaults to a slug from --name.")
     parser.add_argument("--output", type=Path, default=Path("GeneratedPets"), help="Output root directory.")
     parser.add_argument("--provider", default="dashscope", choices=["dashscope", "openai"], help="Image API provider.")
