@@ -394,7 +394,8 @@ def dashscope_image_edit(
         "negative_prompt": (
             "文字，水印，边框，网格线，背景，阴影，裁切身体，多个角色，"
             "低清晰度，肢体畸形，颜色漂移，角色服装不一致，"
-            "每行少于8个角色，每行6个角色，每行7个角色，跨格角色，合并格子，"
+            "每行少于8个角色，每行多于8个角色，每行6个角色，每行7个角色，每行9个角色，"
+            "第9列，第9个角色，额外角色，跨格角色，合并格子，"
             "漫画分镜，海报构图，大插画，角色出格，角色重叠，"
             "多余的腿，缺少腿，腿交叉错误，四肢方向错误，双前腿同时向前，"
             "双后腿同时向后，人类跑步姿势，向左跑，面朝左，正面跑，背面跑，"
@@ -442,9 +443,11 @@ Canvas:
 - Aspect ratio: 2:1.
 - The final image is one single spritesheet with exactly 4 horizontal rows and exactly 8 vertical columns.
 - This means exactly 32 separate character drawings total.
-- Every row must contain exactly 8 character drawings. Not 6. Not 7. Exactly 8.
-- Every column position must be evenly spaced from left to right.
-- Imagine the canvas is divided into 32 equal invisible square cells. Place one and only one character inside each cell.
+- Every row must contain exactly 8 character drawings. Not 6. Not 7. Not 9. Exactly 8.
+- Every row has exactly these column slots: column 1, column 2, column 3, column 4, column 5, column 6, column 7, column 8.
+- There is no column 9. Do not draw a ninth character after column 8.
+- Every column position must be evenly spaced from left to right, using the full width as 8 equal slots.
+- Imagine the canvas is divided into 32 equal invisible square cells: 4 rows x 8 columns. Place one and only one character inside each cell.
 - The character must stay completely inside its own invisible cell. Do not let any character cross into another cell.
 - Leave consistent empty green padding around each character inside its cell.
 - Do not draw visible grid lines, borders, text, labels, numbers, scenery, props, shadows, or UI.
@@ -486,6 +489,9 @@ Strict requirements:
 - Do not create large illustrations spanning multiple cells.
 - Do not make rows with fewer than 8 characters.
 - Do not make any row with 6 or 7 characters.
+- Do not make rows with more than 8 characters.
+- Do not make any row with 9 characters.
+- Do not add an extra pose at the far right edge.
 - Do not crop off heads, ears, tails, paws, or body parts.
 """.strip()
 
