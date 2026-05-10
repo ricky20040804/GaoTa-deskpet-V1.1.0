@@ -394,7 +394,7 @@ def dashscope_image_edit(
         "negative_prompt": (
             "文字，水印，边框，网格线，背景，阴影，裁切身体，多个角色，"
             "低清晰度，肢体畸形，颜色漂移，角色服装不一致，"
-            "每行少于8只猫，每行6只猫，每行7只猫，跨格角色，合并格子，"
+            "每行少于8个角色，每行6个角色，每行7个角色，跨格角色，合并格子，"
             "漫画分镜，海报构图，大插画，角色出格，角色重叠，"
             "多余的腿，缺少腿，腿交叉错误，四肢方向错误，双前腿同时向前，"
             "双后腿同时向后，人类跑步姿势"
@@ -450,9 +450,9 @@ Canvas:
 - Use a flat pure chroma-key green background (#00FF00) everywhere outside the character.
 
 Rows:
-- Row 1 must contain exactly 8 idle cat poses, calm breathing/blinking, one cat per cell.
-- Row 2 must contain exactly 8 running cat poses, side-view running toward the right, one cat per cell.
-- Row 2 running gait must be anatomically consistent for a four-legged cat. Use this exact 8-frame leg cycle:
+- Row 1 must contain exactly 8 idle character poses, calm breathing/blinking, one character per cell.
+- Row 2 must contain exactly 8 running character poses, side-view running toward the right, one character per cell.
+- If the uploaded character is a four-legged animal, Row 2 running gait must be anatomically consistent. Use this exact 8-frame leg cycle:
   frame 1: left front leg reaches forward, left rear leg pushes backward, right front leg moves backward, right rear leg reaches forward.
   frame 2: left front leg vertical under shoulder, left rear leg lifting forward, right front leg lifting forward, right rear leg vertical under hip.
   frame 3: left front leg moves backward, left rear leg reaches forward, right front leg reaches forward, right rear leg pushes backward.
@@ -461,11 +461,12 @@ Rows:
   frame 6: repeat frame 2 with a slightly different body bounce.
   frame 7: repeat frame 3 with a slightly different body bounce.
   frame 8: repeat frame 4 with a slightly different body bounce.
-- In Row 2, diagonal leg pairs must alternate clearly: left front + right rear forward, then right front + left rear forward.
-- Do not draw impossible legs, missing legs, extra legs, crossed legs, human-like running, or both front legs forward at the same time.
-- Row 3 must contain exactly 8 failed cat poses, disappointed or confused but still cute, one cat per cell.
-- Row 4 must contain exactly 8 tail-wagging cat poses, the cat happily wagging its tail, one cat per cell.
-- In Row 4, the tail movement must be the main visible change from frame to frame. Do not make the cat wave a paw.
+- For four-legged characters in Row 2, diagonal leg pairs must alternate clearly: left front + right rear forward, then right front + left rear forward.
+- If the uploaded character is not four-legged, use an anatomically natural 8-frame running cycle for that character instead.
+- Do not draw impossible limbs, missing limbs, extra limbs, crossed limbs, or both front legs forward at the same time for four-legged characters.
+- Row 3 must contain exactly 8 failed character poses, disappointed or confused but still cute, one character per cell.
+- Row 4 must contain exactly 8 tail-wagging character poses, the character happily wagging its tail, one character per cell.
+- In Row 4, the tail movement must be the main visible change from frame to frame. Do not make the character wave a paw or hand.
 
 Style: {style}.
 Character notes: {description}.
@@ -474,13 +475,13 @@ Strict requirements:
 - Same character, same costume, same colors, same proportions in every frame.
 - Green screen background only, no gradients and no texture.
 - Full body visible in every frame.
-- Keep every cat centered inside its own equal-sized cell with consistent size.
+- Keep every character centered inside its own equal-sized cell with consistent size.
 - Each row must read left-to-right as a smooth looping animation.
 - The image itself should already look like an animation spritesheet, not a poster, comic page, or collage.
 - Do not merge cells.
 - Do not create large illustrations spanning multiple cells.
-- Do not make rows with fewer than 8 cats.
-- Do not make any row with 6 or 7 cats.
+- Do not make rows with fewer than 8 characters.
+- Do not make any row with 6 or 7 characters.
 - Do not crop off heads, ears, tails, paws, or body parts.
 """.strip()
 
